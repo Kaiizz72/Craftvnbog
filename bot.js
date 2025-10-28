@@ -6,11 +6,7 @@ const SERVER_HOST = process.env.SERVER_HOST || 'play.craftvn.net'
 const SERVER_PORT = Number(process.env.SERVER_PORT || 25565)
 const AUTH_MODE   = process.env.AUTH_MODE || 'offline'
 const MAX_BOTS    = 1
-
-// delay join ngẫu nhiên từ 10–20 giây
-function randomDelay() {
-  return 10000 + Math.floor(Math.random() * 10000)
-}
+const JOIN_DELAY_MS = 15000 // 15s mỗi bot
 
 const NAMES = ['BoLaHackLo']
 
@@ -21,8 +17,7 @@ function createBot(name) {
     host: SERVER_HOST,
     port: SERVER_PORT,
     username: name,
-    auth: AUTH_MODE,
-    version: '1.21.1'
+    auth: AUTH_MODE
   })
 
   bot.loadPlugin(pathfinder)
@@ -30,17 +25,23 @@ function createBot(name) {
 
   bot.once('spawn', () => {
     console.log(`[${name}] Spawned!`)
-    startFlow(bot)
+    startFlow(bot, false) // lần đầu
   })
 
   bot.on('kicked', r => {
-    console.log(`[${name}] kicked:`, r)
+    try {
+      console.log(`[${name}] kicked: ${JSON.stringify(r, null, 2)}`)
+    } catch {
+      console.log(`[${name}] kicked:`, r)
+    }
     reconnect(name)
   })
+
   bot.on('end', () => {
     console.log(`[${name}] connection ended`)
     reconnect(name)
   })
+
   bot.on('error', e => console.log(`[${name}] error:`, e))
 
   setupLogic(bot)
@@ -49,17 +50,27 @@ function createBot(name) {
 
 function reconnect(name) {
   console.log(`[${name}] Reconnecting in 60s...`)
-  setTimeout(() => createBot(name), 60000) // 60 giây thay vì 5
+  setTimeout(() => {
+    const bot = createBot(name)
+    bot.once('spawn', () => startFlow(bot, true)) // flow reconnect
+  }, 60000)
 }
 
-function startFlow(bot) {
-  // Register / Login / vào server boxpvp với delay lâu hơn
-  setTimeout(() => bot.chat('/register 123456789 123456789'), 15000) // 15s
-  setTimeout(() => bot.chat('/login 123456789'), 25000) // 25s
-  setTimeout(() => bot.chat('/server boxpvp'), 40000) // 40s
-  setTimeout(() => bot.chat('/giftcode 40mem'), 60000) // 60s
+// Flow lần đầu & reconnect
+function startFlow(bot, isReconnect = false) {
+  if (!isReconnect) {
+    setTimeout(() => bot.chat('/register 123456789 123456789'), 5000)
+    setTimeout(() => bot.chat('/login 123456789'), 10000)
+    setTimeout(() => bot.chat('/server boxpvp'), 18000)
+    setTimeout(() => bot.chat('/giftcode 40mem'), 30000)
+  } else {
+    setTimeout(() => bot.chat('/login 123456789'), 5000)
+    setTimeout(() => bot.chat('/server boxpvp'), 10000)
+    setTimeout(() => bot.chat('/giftcode 40mem'), 20000)
+  }
 }
 
+// Equip đồ tốt nhất từ inventory
 function equipBestGear(bot) {
   const items = bot.inventory.items()
   const slots = {
@@ -75,16 +86,7 @@ function equipBestGear(bot) {
   }
 }
 
-function tradeSlime(bot) {
-  const npc = bot.nearestEntity(e => e.displayName === 'Slime Newbie')
-  if (npc) {
-    bot.trade(npc).then(trade => {
-      const recipe = trade.recipes.find(r => r.output.name.includes('firework'))
-      if (recipe) trade.trade(recipe, 1).catch(()=>{})
-    }).catch(()=>{})
-  }
-}
-
+// Logic mở shulker, mặc đồ, pvp
 function setupLogic(bot) {
   bot.on('windowOpen', async (window) => {
     if (window.title.toLowerCase().includes('shulker')) {
@@ -93,11 +95,10 @@ function setupLogic(bot) {
       }
       await window.close()
       equipBestGear(bot)
-      setTimeout(() => tradeSlime(bot), 3000)
     }
   })
 
-  // Dùng event mới physicsTick
+  // PvP logic
   bot.on('physicsTick', () => {
     if (bot.health <= 8) {
       const pos = bot.entity.position.offset(10,0,10)
@@ -114,14 +115,14 @@ function setupLogic(bot) {
     console.log(`[${bot.username}] Died! Respawn logic...`)
     setTimeout(() => {
       equipBestGear(bot)
-      tradeSlime(bot)
     }, 5000)
   })
 }
 
+// Chạy bot
 ;(async () => {
   for (let i = 0; i < NAMES.length; i++) {
     createBot(NAMES[i])
-    await wait(randomDelay()) // join ngẫu nhiên 10–20s
+    await wait(JOIN_DELAY_MS)
   }
 })()
