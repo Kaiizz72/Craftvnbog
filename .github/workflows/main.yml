@@ -1,0 +1,29 @@
+name: Run CraftVN Bot
+
+on:
+  workflow_dispatch:   # chạy thủ công
+  push:
+    branches: [ main ]
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4   # v4 thay vì v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run bot
+      run: node bot.js
+      env:
+        SERVER_HOST: play.craftvn.net
+        SERVER_PORT: 25565
+        AUTH_MODE: offline
