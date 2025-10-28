@@ -1,7 +1,6 @@
-
 const mineflayer = require('mineflayer')
 const { pathfinder, goals: { GoalXZ } } = require('mineflayer-pathfinder')
-const autoEat = require('mineflayer-auto-eat').plugin
+const autoEat = require('mineflayer-auto-eat')   // đã fix
 const pvp = require('mineflayer-pvp').plugin
 
 const SERVER_HOST = process.env.SERVER_HOST || 'play.craftvn.net'
@@ -23,7 +22,7 @@ function createBot(name) {
   })
 
   bot.loadPlugin(pathfinder)
-  bot.loadPlugin(autoEat)
+  bot.loadPlugin(autoEat)   // load ok
   bot.loadPlugin(pvp)
 
   bot.once('spawn', () => {
