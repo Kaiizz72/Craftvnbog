@@ -2,22 +2,22 @@ const mineflayer = require('mineflayer')
 const { pathfinder, goals: { GoalXZ } } = require('mineflayer-pathfinder')
 const pvp = require('mineflayer-pvp').plugin
 
+// ===== CONFIG =====
 const SERVER_HOST = process.env.SERVER_HOST || 'play.craftvn.net'
 const SERVER_PORT = Number(process.env.SERVER_PORT || 25565)
-const AUTH_MODE   = process.env.AUTH_MODE || 'offline'
-const MAX_BOTS    = 1
-const JOIN_DELAY_MS = 15000 // 15s mỗi bot
+const AUTH_MODE   = process.env.AUTH_MODE || 'offline'   // 'offline' hoặc 'microsoft'
+const VERSION     = process.env.VERSION || '1.21.1'      // chỉnh đúng version server
+const NAMES       = ['BoLaHackLoo']                      // tên bot
+const JOIN_DELAY_MS = 15000
 
-const NAMES = ['BoLaHackLo']
-
-function wait(ms) { return new Promise(res => setTimeout(res, ms)) }
-
-function createBot(name) {
+// ===== CREATE BOT =====
+function createBot(name, isReconnect = false) {
   const bot = mineflayer.createBot({
     host: SERVER_HOST,
     port: SERVER_PORT,
     username: name,
-    auth: AUTH_MODE
+    auth: AUTH_MODE,
+    version: VERSION
   })
 
   bot.loadPlugin(pathfinder)
@@ -25,15 +25,16 @@ function createBot(name) {
 
   bot.once('spawn', () => {
     console.log(`[${name}] Spawned!`)
-    startFlow(bot, false) // lần đầu
+    startFlow(bot, isReconnect)
   })
 
-  bot.on('kicked', r => {
-    try {
-      console.log(`[${name}] kicked: ${JSON.stringify(r, null, 2)}`)
-    } catch {
-      console.log(`[${name}] kicked:`, r)
-    }
+  bot.on('chat', (username, message) => {
+    if (username === bot.username) return
+    console.log(`[Chat] <${username}> ${message}`)
+  })
+
+  bot.on('kicked', reason => {
+    console.log(`[${name}] kicked: ${JSON.stringify(reason, null, 2)}`)
     reconnect(name)
   })
 
@@ -48,29 +49,28 @@ function createBot(name) {
   return bot
 }
 
-function reconnect(name) {
-  console.log(`[${name}] Reconnecting in 60s...`)
-  setTimeout(() => {
-    const bot = createBot(name)
-    bot.once('spawn', () => startFlow(bot, true)) // flow reconnect
-  }, 60000)
-}
-
-// Flow lần đầu & reconnect
-function startFlow(bot, isReconnect = false) {
+// ===== FLOWS =====
+function startFlow(bot, isReconnect) {
   if (!isReconnect) {
+    // lần đầu vào
     setTimeout(() => bot.chat('/register 123456789 123456789'), 5000)
     setTimeout(() => bot.chat('/login 123456789'), 10000)
     setTimeout(() => bot.chat('/server boxpvp'), 18000)
     setTimeout(() => bot.chat('/giftcode 40mem'), 30000)
   } else {
+    // reconnect
     setTimeout(() => bot.chat('/login 123456789'), 5000)
     setTimeout(() => bot.chat('/server boxpvp'), 10000)
     setTimeout(() => bot.chat('/giftcode 40mem'), 20000)
   }
 }
 
-// Equip đồ tốt nhất từ inventory
+function reconnect(name) {
+  console.log(`[${name}] Reconnecting in 60s...`)
+  setTimeout(() => createBot(name, true), 60000)
+}
+
+// ===== LOGIC =====
 function equipBestGear(bot) {
   const items = bot.inventory.items()
   const slots = {
@@ -86,7 +86,6 @@ function equipBestGear(bot) {
   }
 }
 
-// Logic mở shulker, mặc đồ, pvp
 function setupLogic(bot) {
   bot.on('windowOpen', async (window) => {
     if (window.title.toLowerCase().includes('shulker')) {
@@ -98,7 +97,6 @@ function setupLogic(bot) {
     }
   })
 
-  // PvP logic
   bot.on('physicsTick', () => {
     if (bot.health <= 8) {
       const pos = bot.entity.position.offset(10,0,10)
@@ -106,23 +104,19 @@ function setupLogic(bot) {
       return
     }
     const target = bot.nearestEntity(e => e.type === 'player' && e.username !== bot.username)
-    if (target) {
-      if (!bot.pvp.target) bot.pvp.attack(target)
-    }
+    if (target && !bot.pvp.target) bot.pvp.attack(target)
   })
 
   bot.on('death', () => {
     console.log(`[${bot.username}] Died! Respawn logic...`)
-    setTimeout(() => {
-      equipBestGear(bot)
-    }, 5000)
+    setTimeout(() => equipBestGear(bot), 5000)
   })
 }
 
-// Chạy bot
+// ===== RUN MULTI BOT =====
 ;(async () => {
   for (let i = 0; i < NAMES.length; i++) {
-    createBot(NAMES[i])
-    await wait(JOIN_DELAY_MS)
+    createBot(NAMES[i], false)
+    await new Promise(res => setTimeout(res, JOIN_DELAY_MS))
   }
 })()
