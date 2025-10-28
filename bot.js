@@ -48,15 +48,16 @@ function createBot(name) {
 }
 
 function reconnect(name) {
-  console.log(`[${name}] Reconnecting in 5s...`)
-  setTimeout(() => createBot(name), 5000)
+  console.log(`[${name}] Reconnecting in 60s...`)
+  setTimeout(() => createBot(name), 60000) // 60 giây thay vì 5
 }
 
 function startFlow(bot) {
-  setTimeout(() => bot.chat('/register 123456789 123456789'), 2000)
-  setTimeout(() => bot.chat('/login 123456789'), 5000)
-  setTimeout(() => bot.chat('/server boxpvp'), 8000)
-  setTimeout(() => bot.chat('/giftcode 40mem'), 12000)
+  // Register / Login / vào server boxpvp với delay lâu hơn
+  setTimeout(() => bot.chat('/register 123456789 123456789'), 15000) // 15s
+  setTimeout(() => bot.chat('/login 123456789'), 25000) // 25s
+  setTimeout(() => bot.chat('/server boxpvp'), 40000) // 40s
+  setTimeout(() => bot.chat('/giftcode 40mem'), 60000) // 60s
 }
 
 function equipBestGear(bot) {
@@ -96,7 +97,7 @@ function setupLogic(bot) {
     }
   })
 
-  // dùng event mới physicsTick
+  // Dùng event mới physicsTick
   bot.on('physicsTick', () => {
     if (bot.health <= 8) {
       const pos = bot.entity.position.offset(10,0,10)
