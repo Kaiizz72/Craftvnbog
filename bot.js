@@ -1,6 +1,5 @@
 const mineflayer = require('mineflayer')
 const { pathfinder, goals: { GoalXZ } } = require('mineflayer-pathfinder')
-const autoEat = require('mineflayer-auto-eat')
 const pvp = require('mineflayer-pvp').plugin
 
 const SERVER_HOST = process.env.SERVER_HOST || 'play.craftvn.net'
@@ -23,11 +22,10 @@ function createBot(name) {
     port: SERVER_PORT,
     username: name,
     auth: AUTH_MODE,
-    version: '1.21.1' // ép version cho đúng server
+    version: '1.21.1'
   })
 
   bot.loadPlugin(pathfinder)
-  bot.loadPlugin(autoEat)
   bot.loadPlugin(pvp)
 
   bot.once('spawn', () => {
@@ -98,7 +96,7 @@ function setupLogic(bot) {
     }
   })
 
-  // Đổi thành physicsTick
+  // dùng event mới physicsTick
   bot.on('physicsTick', () => {
     if (bot.health <= 8) {
       const pos = bot.entity.position.offset(10,0,10)
@@ -123,6 +121,6 @@ function setupLogic(bot) {
 ;(async () => {
   for (let i = 0; i < NAMES.length; i++) {
     createBot(NAMES[i])
-    await wait(randomDelay()) // join ngẫu nhiên 10–20 giây
+    await wait(randomDelay()) // join ngẫu nhiên 10–20s
   }
 })()
