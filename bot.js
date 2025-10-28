@@ -1,13 +1,17 @@
 const mineflayer = require('mineflayer')
 const { pathfinder, goals: { GoalXZ } } = require('mineflayer-pathfinder')
-const autoEat = require('mineflayer-auto-eat')   // đã fix
+const autoEat = require('mineflayer-auto-eat')
 const pvp = require('mineflayer-pvp').plugin
 
 const SERVER_HOST = process.env.SERVER_HOST || 'play.craftvn.net'
 const SERVER_PORT = Number(process.env.SERVER_PORT || 25565)
 const AUTH_MODE   = process.env.AUTH_MODE || 'offline'
 const MAX_BOTS    = 1
-const JOIN_DELAY_MS = 5000
+
+// delay join ngẫu nhiên từ 10–20 giây
+function randomDelay() {
+  return 10000 + Math.floor(Math.random() * 10000)
+}
 
 const NAMES = ['BoLaHackLo']
 
@@ -18,11 +22,12 @@ function createBot(name) {
     host: SERVER_HOST,
     port: SERVER_PORT,
     username: name,
-    auth: AUTH_MODE
+    auth: AUTH_MODE,
+    version: '1.21.1' // ép version cho đúng server
   })
 
   bot.loadPlugin(pathfinder)
-  bot.loadPlugin(autoEat)   // load ok
+  bot.loadPlugin(autoEat)
   bot.loadPlugin(pvp)
 
   bot.once('spawn', () => {
@@ -50,14 +55,12 @@ function reconnect(name) {
 }
 
 function startFlow(bot) {
-  // Register / Login / vào server boxpvp
   setTimeout(() => bot.chat('/register 123456789 123456789'), 2000)
   setTimeout(() => bot.chat('/login 123456789'), 5000)
   setTimeout(() => bot.chat('/server boxpvp'), 8000)
   setTimeout(() => bot.chat('/giftcode 40mem'), 12000)
 }
 
-// Equip đồ tốt nhất từ inventory
 function equipBestGear(bot) {
   const items = bot.inventory.items()
   const slots = {
@@ -73,7 +76,6 @@ function equipBestGear(bot) {
   }
 }
 
-// Trade với NPC Slime Newbie
 function tradeSlime(bot) {
   const npc = bot.nearestEntity(e => e.displayName === 'Slime Newbie')
   if (npc) {
@@ -84,7 +86,6 @@ function tradeSlime(bot) {
   }
 }
 
-// Logic mở shulker và mặc đồ
 function setupLogic(bot) {
   bot.on('windowOpen', async (window) => {
     if (window.title.toLowerCase().includes('shulker')) {
@@ -97,8 +98,8 @@ function setupLogic(bot) {
     }
   })
 
-  // PvP logic
-  bot.on('physicTick', () => {
+  // Đổi thành physicsTick
+  bot.on('physicsTick', () => {
     if (bot.health <= 8) {
       const pos = bot.entity.position.offset(10,0,10)
       bot.pathfinder.setGoal(new GoalXZ(pos.x,pos.z), false)
@@ -122,6 +123,6 @@ function setupLogic(bot) {
 ;(async () => {
   for (let i = 0; i < NAMES.length; i++) {
     createBot(NAMES[i])
-    await wait(JOIN_DELAY_MS)
+    await wait(randomDelay()) // join ngẫu nhiên 10–20 giây
   }
 })()
