@@ -10,7 +10,7 @@ const AUTH_MODE   = process.env.AUTH_MODE || 'offline'
 const MAX_BOTS    = 1
 const JOIN_DELAY_MS = 2500
 
-const NAMES = ['craftvnBot']
+const NAMES = ['BoLaHackLo']
 
 function wait(ms) { return new Promise(res => setTimeout(res, ms)) }
 
