@@ -1,7 +1,7 @@
 {
   "name": "mineflayer-bot-proxy",
   "version": "1.0.0",
-  "description": "Bot Mineflayer auto proxy, auto register/login, reconnect",
+  "description": "Bot Mineflayer auto register/login, combat, auto eat, reconnect",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
@@ -9,9 +9,8 @@
   "dependencies": {
     "mineflayer": "^4.32.0",
     "mineflayer-pathfinder": "^2.4.5",
-    "mineflayer-pvp": "^1.3.0",
-    "mineflayer-collectblock": "^1.6.0",
     "mineflayer-auto-eat": "^2.3.0",
-    "minecraft-data": "^3.67.0",
+    "mineflayer-pvp": "^1.3.0",
+    "minecraft-data": "^3.67.0"
   }
 }
